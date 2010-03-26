@@ -13,14 +13,14 @@ Require do
       gem :require
     end
     email 'mail@wintoni.us'
-    name 'gem_template'
+    name 'mover'
     homepage "http://github.com/winton/#{name}"
     summary ""
     version '0.1.0'
   end
   
-  bin { require 'lib/gem_template' }
-  lib { require 'lib/gem_template/gem_template' }
+  bin { require 'lib/mover' }
+  lib { require 'lib/mover/mover' }
   
   rakefile do
     gem(:rake) { require 'rake/gempackagetask' }
@@ -30,7 +30,7 @@ Require do
   
   spec_helper do
     require 'require/spec_helper'
-    require 'lib/gem_template'
+    require 'lib/mover'
     require 'pp'
   end
 end
