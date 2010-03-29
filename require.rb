@@ -39,7 +39,7 @@ Require do
   
   spec_helper do
     require 'require/spec_helper'
-    require 'lib/mover'
+    require 'rails/init'
     require 'pp'
   end
 end
