@@ -15,18 +15,25 @@ Require do
     email 'mail@wintoni.us'
     name 'mover'
     homepage "http://github.com/winton/#{name}"
-    summary ""
+    summary "Move ActiveRecord records across tables like it ain't no thang"
     version '0.1.0'
   end
   
   bin { require 'lib/mover' }
-  lib { require 'lib/mover/mover' }
+  
+  lib do
+    require 'lib/mover/create_table'
+    require 'lib/mover/move_record'
+    require 'lib/mover/restore_record'
+  end
   
   rakefile do
     gem(:rake) { require 'rake/gempackagetask' }
     gem(:rspec) { require 'spec/rake/spectask' }
     require 'require/tasks'
   end
+  
+  rails_init { require 'lib/mover' }
   
   spec_helper do
     require 'require/spec_helper'
