@@ -3,6 +3,7 @@ gem 'require'
 require 'require'
 
 Require do
+  gem(:active_wrapper, '=0.2.3') { require 'active_wrapper' }
   gem :require, '=0.2.6'
   gem(:rake, '=0.8.7') { require 'rake' }
   gem :rspec, '=1.3.0'
@@ -28,6 +29,7 @@ Require do
   end
   
   rakefile do
+    gem(:active_wrapper)
     gem(:rake) { require 'rake/gempackagetask' }
     gem(:rspec) { require 'spec/rake/spectask' }
     require 'require/tasks'
