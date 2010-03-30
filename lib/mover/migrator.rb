@@ -10,17 +10,24 @@ module Mover
         :drop_table, :remove_column, :remove_columns,
         :remove_timestamps, :rename_column, :rename_table
       ]
+      
+      # Don't change these columns
       %w(moved_at move_id).each do |column|
-        if args.include?(column) || args.include?(column.intern)
-          return # Don't change the column
-        end
+        return if args.include?(column) || args.include?(column.intern)
       end
+      
       if !args.empty? && supported.include?(method)
         connection = ActiveRecord::Base.connection
         table_name = ActiveRecord::Migrator.proper_table_name(args[0])
-        klass = class_from_table_name(table_name)
+        # Find model
+        klass = Object.subclasses_of(ActiveRecord::Base).detect do |klass|
+          if klass.respond_to?(:movable_types)
+            klass.table_name.to_s == table_name
+          end
+        end
+        # Run migration on movable table
         if klass
-          klass.moveable_types.each do |type|
+          klass.movable_types.each do |type|
             args[0] = [ type, table_name ].join('_')
             if method == :rename_table
               args[1] = [ type, args[1].to_s ].join('_')
@@ -29,14 +36,6 @@ module Mover
               connection.send(method, *args, &block)
             end
           end
-        end
-      end
-    end
-    
-    def class_from_table_name(table_name)
-      Object.subclasses_of(ActiveRecord::Base).detect do |klass|
-        if klass.respond_to?(:is_moveable?) && klass.is_moveable?
-          klass.table_name.to_s == table_name
         end
       end
     end

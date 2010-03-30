@@ -23,9 +23,9 @@ Require do
   bin { require 'lib/mover' }
   
   lib do
-    require 'lib/mover/create_table'
-    require 'lib/mover/move_record'
-    require 'lib/mover/restore_record'
+    require 'lib/mover/migrator'
+    require 'lib/mover/record'
+    require 'lib/mover/table'
   end
   
   rakefile do
@@ -38,8 +38,10 @@ Require do
   rails_init { require 'lib/mover' }
   
   spec_helper do
+    gem(:active_wrapper)
     require 'require/spec_helper'
     require 'rails/init'
     require 'pp'
+    require 'spec/fixtures/article'
   end
 end

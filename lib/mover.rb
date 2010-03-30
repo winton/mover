@@ -6,21 +6,23 @@ module Mover
     def self.included(base)
       unless base.included_modules.include?(Included)
         base.extend ClassMethods
-        base.include Included
+        base.send :include, Included
       end
     end
   
     module ClassMethods
       def is_movable(*types)
-        self.attr_reader :is_moveable?
-        self.attr_reader :moveable_types
+        @movable_types = types
         
-        self.is_moveable? = true
-        self.moveable_types = types
+        self.class_eval do
+          class <<self
+            attr_reader :movable_types
+          end
+        end
         
-        extend CreateTable
-        extend RestoreRecord
-        include MoveRecord
+        extend Table
+        extend Record::ClassMethods
+        include Record::InstanceMethods
       end
     end
   end
@@ -29,10 +31,12 @@ module Mover
     def self.included(base)
       unless base.included_modules.include?(Included)
         base.extend Migrator
-        base.include Included
+        base.send :include, Included
         base.class_eval do
-          self.alias_method :method_missing_without_mover, :method_missing
-          self.alias_method :method_missing, :method_missing_with_mover
+          class <<self
+            alias_method :method_missing_without_mover, :method_missing
+            alias_method :method_missing, :method_missing_with_mover
+          end
         end
       end
     end
