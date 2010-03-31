@@ -20,6 +20,15 @@ module Mover
           end
         end
         
+        types.each do |type|
+          eval <<-RUBY
+            class ::#{type.to_s.classify}#{self.table_name.classify} < ActiveRecord::Base
+              self.record_timestamps = false
+              self.table_name = "#{type}_#{self.table_name}"
+            end
+          RUBY
+        end
+        
         extend Table
         extend Record::ClassMethods
         include Record::InstanceMethods
