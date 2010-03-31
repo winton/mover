@@ -5,7 +5,5 @@ class RemoveMagicColumns < ActiveRecord::Migration
   end
 
   def self.down
-    add_column :articles, :moved_id, :integer
-    add_column :articles, :moved_at, :datetime
   end
 end

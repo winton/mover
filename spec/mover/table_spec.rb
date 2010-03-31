@@ -33,7 +33,6 @@ describe Mover::Base::Table do
         Article.create_movable_table(
           :archived,
           :columns => %w(id read),
-          :extra_columns => { :extra => :integer },
           :indexes => %w(read)
         )
         @archive_columns = connection.columns("archived_articles").collect(&:name)
@@ -45,8 +44,8 @@ describe Mover::Base::Table do
       end
       
       it "should create the correct columns" do
-        @archive_columns.length.should == 3
-        %w(id read extra).each do |col|
+        @archive_columns.length.should == 2
+        %w(id read).each do |col|
           @archive_columns.include?(col).should == true
         end
       end

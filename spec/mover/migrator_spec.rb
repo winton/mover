@@ -25,6 +25,8 @@ describe Mover::Migrator do
     end
     
     it "should not touch the archive's move_id or moved_at column" do
+      connection.add_column(:articles, :move_id, :integer)
+      connection.add_column(:articles, :moved_at, :datetime)
       migrate_with_state(3)
       (@old_article_columns - @new_article_columns).should == [ 'move_id', 'moved_at' ]
       (@old_archive_columns - @new_archive_columns).should == []

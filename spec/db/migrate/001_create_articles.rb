@@ -4,8 +4,6 @@ class CreateArticles < ActiveRecord::Migration
       t.string :title
       t.string :body
       t.boolean :read
-      t.integer :move_id
-      t.datetime :moved_at
     end
     add_index :articles, :title
   end

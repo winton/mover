@@ -10,25 +10,23 @@ Requirements
 sudo gem install mover
 </pre>
 
-Create the duplicate table
---------------------------
+<a name="create_the_movable_table"></a>
+
+Create the movable table
+------------------------
+
+Migration:
 
 <pre>
 class CreateArchivedArticles < ActiveRecord::Migration
   def self.up
     Article.create_movable_table(
-      # Table will be named "archived_articles"
       :archived,
-
-      # Only create certain columns (defaults to all)
       :columns => %w(id title body created_at),
-
-      # Extra columns to create
-      :extra_columns => { :move_id => :integer, :moved_at => :datetime },
-
-      # Only create certain indexes (defaults to all)
-      :indexes => %(id created_at moved_at)
+      :indexes => %w(id created_at)
     )
+    add_column :archived_articles, :move_id, :integer
+    add_column :archived_articles, :moved_at, :datetime
   end
 
   def self.down
@@ -37,7 +35,14 @@ class CreateArchivedArticles < ActiveRecord::Migration
 end
 </pre>
 
-The extra columns, <code>move\_id</code> and <code>moved\_at</code>, are <a href="#magic_columns">magic columns</a>.
+The first parameter names your movable table. In this example, the table is named <code>archived_articles</code>.
+
+Options:
+
+* <code>:columns</code> - Only use certain columns from the original table. Defaults to all.
+* <code>:indexes</code> - Only create certain indexes. Defaults to all.
+
+We also added two columns, <code>move\_id</code> and <code>moved\_at</code>. These are <a href="#magic_columns">magic columns</a>.
 
 Defining the model
 ------------------
@@ -48,6 +53,8 @@ class Article < ActiveRecord::Base
 end
 </pre>
 
+The <code>is_movable</code> method takes any number of parameters for multiple movable tables.
+
 Moving records
 --------------
 
@@ -56,7 +63,7 @@ article = Article.last
 article.move_to(:archived)
 </pre>
 
-To automatically move a record's relationships, each relationship will need a movable <code>:archived</code> table and an <code>is_movable :archived</code> call in the model.
+To automatically move the record's relationships as well, repeat the last two sections for each relationship.
 
 Restoring records
 -----------------
@@ -70,6 +77,14 @@ Article.move_from(:archived, [ "created_at > ?", Date.today ])
 Magic columns
 -------------
 
-By default, restoring a record will only restore itself and not its relationships. To restore the relationships as well, you need to specify <code>move\_id</code> as an <code>extra\_columns</code> option for all movable tables involved.
+### move_id
 
-If you need to know when the record was moved, add <code>moved\_at</code> as an <code>extra\_columns</code> option.
+By default, restoring a record will only restore itself and not its movable relationships.
+
+To restore the relationships automagically, add the <code>move_id</code> column to all movable tables involved.
+
+### moved_at
+
+If you need to know when the record was moved, add the <code>moved\_at</code> column to your movable table.
+
+See the <a href="#create_the_movable_table">create the movable table</a> section for an example of how to add the magic columns.

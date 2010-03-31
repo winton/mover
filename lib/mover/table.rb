@@ -23,10 +23,6 @@ module Mover
             FROM #{table_name}
             WHERE false;
           SQL
-          # Create extra columns
-          (options[:extra_columns] || {}).each do |column, type|
-            connection.add_column(movable_table, column, type)
-          end
           # Create indexes
           options[:indexes] ||= indexed_columns(table_name)
           options[:indexes].each do |column|
