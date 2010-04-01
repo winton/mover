@@ -75,7 +75,7 @@ Article.move_from(:archive, [ "created_at > ?", Date.today ])
 ArticleArchive.last.move_from
 </pre>
 
-You can access the movable table by prepending its name to the original class name. In this example, you would use <code>ArticleArchive</code>.
+You can access the movable table by appending its name to the original class name. In this example, you would use <code>ArticleArchive</code>.
 
 <a name="magic_columns"></a>
 
