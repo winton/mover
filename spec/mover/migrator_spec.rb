@@ -3,6 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + "/../spec_helper")
 describe Mover::Migrator do
   
   before(:each) do
+    $db.migrate(1)
     $db.migrate(0)
     $db.migrate(1)
   end

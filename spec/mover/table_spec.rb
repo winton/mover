@@ -3,6 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + "/../spec_helper")
 describe Mover::Base::Table do
 
   before(:all) do
+    $db.migrate(1)
     $db.migrate(0)
     $db.migrate(1)
   end
@@ -11,11 +12,11 @@ describe Mover::Base::Table do
 
     before(:all) do
       @article_columns = connection.columns("articles").collect(&:name)
-      @archive_columns = connection.columns("archived_articles").collect(&:name)
+      @archive_columns = connection.columns("articles_archive").collect(&:name)
     end
 
     it "should create an archive table" do
-      connection.table_exists?("archived_articles").should == true
+      connection.table_exists?("articles_archive").should == true
     end
 
     it "should create an archive table with the same structure as the original table" do
@@ -27,18 +28,18 @@ describe Mover::Base::Table do
     describe 'with options' do
       
       before(:all) do
-        Article.drop_movable_table(:archived)
+        Article.drop_movable_table(:archive)
         Article.create_movable_table(
-          :archived,
+          :archive,
           :columns => %w(id read),
           :indexes => %w(read)
         )
-        @archive_columns = connection.columns("archived_articles").collect(&:name)
+        @archive_columns = connection.columns("articles_archive").collect(&:name)
       end
       
       after(:all) do
-        Article.drop_movable_table(:archived)
-        Article.create_movable_table(:archived)
+        Article.drop_movable_table(:archive)
+        Article.create_movable_table(:archive)
       end
       
       it "should create the correct columns" do
@@ -49,7 +50,7 @@ describe Mover::Base::Table do
       end
       
       it "should create archive indexes" do
-        indexes = Article.send(:indexed_columns, 'archived_articles')
+        indexes = Article.send(:indexed_columns, 'articles_archive')
         indexes.to_set.should == [ "read" ].to_set
       end
     end
@@ -57,7 +58,7 @@ describe Mover::Base::Table do
     describe 'without options' do
       
       it "should create archive indexes" do
-        indexes = Article.send(:indexed_columns, 'archived_articles')
+        indexes = Article.send(:indexed_columns, 'articles_archive')
         indexes.to_set.should == [ "id", "title" ].to_set
       end
     end
@@ -66,12 +67,12 @@ describe Mover::Base::Table do
   describe :drop_movable_table do
     
     it "should drop the table" do
-      Article.drop_movable_table(:archived)
+      Article.drop_movable_table(:archive)
       output = connection.execute(<<-SQL)
         SELECT COUNT(*)
         FROM information_schema.tables 
         WHERE table_schema = '#{Article.configurations['test']['database']}' 
-        AND table_name = 'archived_articles';
+        AND table_name = 'articles_archive';
       SQL
       output.fetch_row.should == ['0']
     end

@@ -3,7 +3,7 @@ module Mover
     module Table
       
       def create_movable_table(type, options={})
-        movable_table = [ type, table_name ].join('_')
+        movable_table = [ table_name, type ].join('_')
         columns =
           if options[:columns]
             options[:columns].collect { |c| "`#{c}`" }.join(', ')
@@ -33,7 +33,7 @@ module Mover
     
       def drop_movable_table(*types)
         types.each do |type|
-          connection.execute("DROP TABLE IF EXISTS #{[ type, table_name ].join('_')}")
+          connection.execute("DROP TABLE IF EXISTS #{[ table_name, type ].join('_')}")
         end
       end
       

@@ -48,7 +48,7 @@ module Mover
         end
         
         def movable_class(type)
-          eval(type.to_s.classify + self.table_name.classify)
+          eval(self.name + type.to_s.classify)
         rescue
           raise "#{self.table_name.classify} needs an `is_movable :#{type}` definition"
         end

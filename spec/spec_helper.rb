@@ -41,8 +41,8 @@ end
 
 def migrate_with_state(version)
   @old_article_columns = columns("articles")
-  @old_archive_columns = columns("archived_articles")
+  @old_archive_columns = columns("articles_archive")
   $db.migrate(version)
   @new_article_columns = columns("articles")
-  @new_archive_columns = columns("archived_articles")
+  @new_archive_columns = columns("articles_archive")
 end

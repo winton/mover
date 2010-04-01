@@ -7,11 +7,11 @@ class CreateArticles < ActiveRecord::Migration
     end
     add_index :articles, :title
     
-    Article.create_movable_table(:archived)
-    add_column :archived_articles, :move_id, :string
-    add_column :archived_articles, :moved_at, :datetime
+    Article.create_movable_table(:archive)
+    add_column :articles_archive, :move_id, :string
+    add_column :articles_archive, :moved_at, :datetime
     
-    Article.create_movable_table(:drafted)
+    Article.create_movable_table(:draft)
     
     create_table :comments do |t|
       t.string :title
@@ -20,15 +20,15 @@ class CreateArticles < ActiveRecord::Migration
       t.integer :article_id
     end
     
-    Comment.create_movable_table(:archived)
-    add_column :archived_comments, :move_id, :string
-    add_column :archived_comments, :moved_at, :datetime
+    Comment.create_movable_table(:archive)
+    add_column :comments_archive, :move_id, :string
+    add_column :comments_archive, :moved_at, :datetime
   end
 
   def self.down
     drop_table :articles
     drop_table :comments
-    Article.drop_movable_table(:archived)
-    Comment.drop_movable_table(:archived)
+    Article.drop_movable_table(:archive)
+    Comment.drop_movable_table(:archive)
   end
 end

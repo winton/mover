@@ -18,24 +18,24 @@ Create the movable table
 Migration:
 
 <pre>
-class CreateArchivedArticles < ActiveRecord::Migration
+class CreateArticlesArchive < ActiveRecord::Migration
   def self.up
     Article.create_movable_table(
-      :archived,
+      :archive,
       :columns => %w(id title body created_at),
       :indexes => %w(id created_at)
     )
-    add_column :archived_articles, :move_id, :string
-    add_column :archived_articles, :moved_at, :datetime
+    add_column :articles_archive, :move_id, :string
+    add_column :articles_archive, :moved_at, :datetime
   end
 
   def self.down
-    Article.drop_movable_table(:archived)
+    Article.drop_movable_table(:archive)
   end
 end
 </pre>
 
-The first parameter names your movable table. In this example, the table is named <code>archived_articles</code>.
+The first parameter names your movable table. In this example, the table is named <code>articles_archive</code>.
 
 Options:
 
@@ -51,7 +51,7 @@ Define the model
 
 <pre>
 class Article < ActiveRecord::Base
-  is_movable :archived
+  is_movable :archive
 end
 </pre>
 
@@ -61,8 +61,8 @@ Moving records
 --------------
 
 <pre>
-Article.last.move_to(:archived)
-Article.move_to(:archived, [ "created_at > ?", Date.today ])
+Article.last.move_to(:archive)
+Article.move_to(:archive, [ "created_at > ?", Date.today ])
 </pre>
 
 Associations move if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
@@ -71,11 +71,11 @@ Restoring records
 -----------------
 
 <pre>
-Article.move_from(:archived, [ "created_at > ?", Date.today ])
-ArchivedArticle.last.move_from
+Article.move_from(:archive, [ "created_at > ?", Date.today ])
+ArticleArchive.last.move_from
 </pre>
 
-You can access the movable table by prepending its name to the original class name. In this example, you would use <code>ArchivedArticle</code>.
+You can access the movable table by prepending its name to the original class name. In this example, you would use <code>ArticleArchive</code>.
 
 <a name="magic_columns"></a>
 

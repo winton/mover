@@ -1,4 +1,4 @@
 class Comment < ActiveRecord::Base
   belongs_to :article
-  is_movable :archived
+  is_movable :archive
 end

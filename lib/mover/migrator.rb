@@ -4,6 +4,7 @@ module Mover
     def method_missing_with_mover(method, *arguments, &block)
       args = Marshal.load(Marshal.dump(arguments))
       method_missing_without_mover(method, *arguments, &block)
+      
       supported = [
         :add_column, :add_timestamps, :change_column,
         :change_column_default, :change_table,
@@ -28,9 +29,9 @@ module Mover
         # Run migration on movable table
         if klass
           klass.movable_types.each do |type|
-            args[0] = [ type, table_name ].join('_')
+            args[0] = [ table_name, type ].join('_')
             if method == :rename_table
-              args[1] = [ type, args[1].to_s ].join('_')
+              args[1] = [ args[1].to_s, type ].join('_')
             end
             if connection.table_exists?(args[0])
               connection.send(method, *args, &block)
