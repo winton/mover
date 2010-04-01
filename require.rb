@@ -23,6 +23,7 @@ Require do
   bin { require 'lib/mover' }
   
   lib do
+    require 'digest/md5'
     require 'lib/mover/migrator'
     require 'lib/mover/record'
     require 'lib/mover/table'
@@ -43,5 +44,6 @@ Require do
     require 'rails/init'
     require 'pp'
     require 'spec/fixtures/article'
+    require 'spec/fixtures/comment'
   end
 end

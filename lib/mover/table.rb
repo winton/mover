@@ -47,8 +47,8 @@ module Mover
             r["Column_name"]
           end
         # PostgreSQL
+        # http://stackoverflow.com/questions/2204058/show-which-columns-an-index-is-on-in-postgresql/2213199
         elsif connection.class.to_s.include?('PostgreSQL')
-          # http://stackoverflow.com/questions/2204058/show-which-columns-an-index-is-on-in-postgresql/2213199#2213199
           index_query = <<-SQL
             select
               t.relname as table_name,

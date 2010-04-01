@@ -15,6 +15,7 @@ module Mover
         @movable_types = types
         
         self.class_eval do
+          attr_accessor :movable_id
           class <<self
             attr_reader :movable_types
           end
@@ -23,8 +24,17 @@ module Mover
         types.each do |type|
           eval <<-RUBY
             class ::#{type.to_s.classify}#{self.table_name.classify} < ActiveRecord::Base
-              self.record_timestamps = false
+              include Mover::Base::Record::InstanceMethods
+              
               self.table_name = "#{type}_#{self.table_name}"
+              
+              def self.movable_type
+                #{type.inspect}
+              end
+              
+              def moved_from_class
+                #{self.table_name.classify}
+              end
             end
           RUBY
         end

@@ -5,8 +5,6 @@ describe Mover::Base::Table do
   before(:all) do
     $db.migrate(0)
     $db.migrate(1)
-    Article.drop_movable_table(:archived)
-    Article.create_movable_table(:archived)
   end
 
   describe :create_movable_table do

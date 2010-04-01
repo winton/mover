@@ -5,8 +5,6 @@ describe Mover::Migrator do
   before(:each) do
     $db.migrate(0)
     $db.migrate(1)
-    Article.drop_movable_table(:archived)
-    Article.create_movable_table(:archived)
   end
   
   describe :method_missing_with_mover do

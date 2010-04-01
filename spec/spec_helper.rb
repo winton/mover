@@ -10,11 +10,10 @@ $db, $log = ActiveWrapper.setup(
 )
 $db.establish_connection
 
-def article_match?(original, copy)
-  copy.id.should == original.id
-  copy.title.should == original.title
-  copy.body.should == original.body
-  copy.read.should == original.read
+def record_match?(original, copy)
+  (original.class.column_names & copy.class.column_names).each do |col|
+    copy.send(col).should == original.send(col)
+  end
 end
 
 def columns(table)
@@ -29,10 +28,14 @@ def create_records(klass=Article, values={})
   klass.delete_all
   (1..5).collect do |x|
     klass.column_names.each do |column|
-      values[column.intern] = "#{x} #{column}"
+      if column == 'article_id'
+        values[:article_id] = x
+      else
+        values[column.intern] = "#{klass} #{x} #{column}"
+      end
     end
     values[:id] = x
-    Article.create(values)
+    klass.create(values)
   end
 end
 

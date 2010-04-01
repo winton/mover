@@ -25,7 +25,7 @@ class CreateArchivedArticles < ActiveRecord::Migration
       :columns => %w(id title body created_at),
       :indexes => %w(id created_at)
     )
-    add_column :archived_articles, :move_id, :integer
+    add_column :archived_articles, :move_id, :string
     add_column :archived_articles, :moved_at, :datetime
   end
 
@@ -44,8 +44,10 @@ Options:
 
 We also added two columns, <code>move\_id</code> and <code>moved\_at</code>. These are <a href="#magic_columns">magic columns</a>.
 
-Defining the model
-------------------
+<a name="define_the_model"></a>
+
+Define the model
+----------------
 
 <pre>
 class Article < ActiveRecord::Base
@@ -63,7 +65,7 @@ article = Article.last
 article.move_to(:archived)
 </pre>
 
-To automatically move the record's relationships as well, repeat the last two sections for each relationship.
+Associations are moved if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
 
 Restoring records
 -----------------
@@ -81,7 +83,7 @@ Magic columns
 
 By default, restoring a record will only restore itself and not its movable relationships.
 
-To restore the relationships automagically, add the <code>move_id</code> column to all movable tables involved.
+To restore the relationships automatically, add the <code>move_id</code> column to all movable tables involved.
 
 ### moved_at
 
