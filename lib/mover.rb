@@ -22,21 +22,25 @@ module Mover
         end
         
         types.each do |type|
-          eval <<-RUBY
-            class ::#{self.name}#{type.to_s.classify} < ActiveRecord::Base
-              include Mover::Base::Record::InstanceMethods
-              
-              self.table_name = "#{self.table_name}_#{type}"
-              
-              def self.movable_type
-                #{type.inspect}
-              end
-              
-              def moved_from_class
-                #{self.name}
-              end
-            end
+          class_name = "::#{self.name}#{type.to_s.classify}"
+          klass = eval(class_name) rescue nil
+          
+          eval_me = <<-RUBY
+            include Mover::Base::Record::InstanceMethods
+            def self.movable_type; #{type.inspect}; end
+            def moved_from_class; #{self.name}; end
           RUBY
+          
+          if klass
+            klass.class_eval(eval_me)
+          else
+            eval <<-RUBY
+              class #{class_name} < ActiveRecord::Base
+                self.table_name = "#{self.table_name}_#{type}"
+                #{eval_me}
+              end
+            RUBY
+          end
         end
         
         extend Table
