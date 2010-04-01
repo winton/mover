@@ -26,6 +26,7 @@ module Mover
           klass = eval(class_name) rescue nil
           
           eval_me = <<-RUBY
+            self.table_name = "#{self.table_name}_#{type}"
             include Mover::Base::Record::InstanceMethods
             def self.movable_type; #{type.inspect}; end
             def moved_from_class; #{self.name}; end
@@ -36,7 +37,6 @@ module Mover
           else
             eval <<-RUBY
               class #{class_name} < ActiveRecord::Base
-                self.table_name = "#{self.table_name}_#{type}"
                 #{eval_me}
               end
             RUBY
