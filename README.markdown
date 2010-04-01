@@ -61,8 +61,8 @@ Moving records
 --------------
 
 <pre>
-article = Article.last
-article.move_to(:archived)
+Article.last.move_to(:archived)
+Article.move_to(:archived, [ "created_at > ?", Date.today ])
 </pre>
 
 Associations move if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
@@ -72,7 +72,10 @@ Restoring records
 
 <pre>
 Article.move_from(:archived, [ "created_at > ?", Date.today ])
+ArchivedArticle.last.move_from
 </pre>
+
+You can access the movable table by prepending its name to the original class name. In this example, you would use <code>ArchivedArticle</code>.
 
 <a name="magic_columns"></a>
 
