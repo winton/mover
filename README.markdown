@@ -65,7 +65,7 @@ article = Article.last
 article.move_to(:archived)
 </pre>
 
-Associations are moved if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
+Associations move if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
 
 Restoring records
 -----------------

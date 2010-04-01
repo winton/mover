@@ -106,4 +106,50 @@ describe Mover::Base::Record do
       end
     end
   end
+  
+  describe :ClassMethods do
+    describe :move_to do
+  
+      before(:all) do
+        create_records
+        create_records(Comment)
+        Article.move_to(:archived, [ 'id = ? OR id = ?', 1, 2 ])
+        Article.move_to(:drafted, [ 'id = ? OR id = ?', 3, 4 ])
+      end
+      
+      it "should move the records" do
+        Article.count.should == 1
+        ArchivedArticle.count.should == 2
+        DraftedArticle.count.should == 2
+      end
+      
+      it "should move associated records" do
+        Comment.count.should == 3
+        ArchivedComment.count.should == 2
+      end
+    end
+    
+    describe :move_from do
+  
+      before(:all) do
+        create_records
+        create_records(Comment)
+        Article.move_to(:archived, [ 'id = ? OR id = ?', 1, 2 ])
+        Article.move_to(:drafted, [ 'id = ? OR id = ?', 3, 4 ])
+        Article.move_from(:archived, [ 'id = ? OR id = ?', 1, 2 ])
+        Article.move_from(:drafted, [ 'id = ? OR id = ?', 3, 4 ])
+      end
+      
+      it "should move the records" do
+        Article.count.should == 5
+        ArchivedArticle.count.should == 0
+        DraftedArticle.count.should == 0
+      end
+      
+      it "should move associated records" do
+        Comment.count.should == 5
+        ArchivedComment.count.should == 0
+      end
+    end
+  end
 end

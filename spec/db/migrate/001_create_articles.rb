@@ -11,6 +11,8 @@ class CreateArticles < ActiveRecord::Migration
     add_column :archived_articles, :move_id, :string
     add_column :archived_articles, :moved_at, :datetime
     
+    Article.create_movable_table(:drafted)
+    
     create_table :comments do |t|
       t.string :title
       t.string :body

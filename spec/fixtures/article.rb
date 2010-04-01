@@ -1,4 +1,4 @@
 class Article < ActiveRecord::Base
   has_many :comments
-  is_movable :archived
+  is_movable :archived, :drafted
 end
