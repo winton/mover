@@ -32,14 +32,14 @@ We also want the article's comments to be archived when the article is.
 <pre>
 class Article < ActiveRecord::Base
   has_many :comments
-  before_move_to :ArticleArchive do
+  before_move :ArticleArchive do
     comments.each { |c| c.move_to(CommentArchive) }
   end
 end
 
 class ArticleArchive < ActiveRecord::Base
   has_many :comments, :class_name => 'CommentArchive', :foreign_key => 'article_id'
-  before_move_to :Article do
+  before_move :Article do
     comments.each { |c| c.move_to(Comment) }
   end
 end

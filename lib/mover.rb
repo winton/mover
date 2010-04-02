@@ -11,14 +11,14 @@ module Mover
   
   module ClassMethods
     
-    def after_move_to(to_class, &block)
-      @after_move_to ||= []
-      @after_move_to << [ to_class, block ]
+    def after_move(to_class, &block)
+      @after_move ||= []
+      @after_move << [ to_class, block ]
     end
     
-    def before_move_to(to_class, &block)
-      @before_move_to ||= []
-      @before_move_to << [ to_class, block ]
+    def before_move(to_class, &block)
+      @before_move ||= []
+      @before_move << [ to_class, block ]
     end
     
     def move_to(to_class, conditions, instance=nil)
@@ -37,8 +37,8 @@ module Mover
       end
       # Callbacks
       collector = lambda { |(klass, block)| block if eval(klass.to_s) == to_class }
-      before = (@before_move_to || []).collect(&collector).compact
-      after = (@after_move_to || []).collect(&collector).compact
+      before = (@before_move || []).collect(&collector).compact
+      after = (@after_move || []).collect(&collector).compact
       # Instances
       instances =
         if instance
