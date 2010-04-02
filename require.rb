@@ -42,4 +42,9 @@ Require do
     require 'spec/fixtures/comment'
     require 'spec/fixtures/comment_archive'
   end
+  
+  spec_rakefile do
+    gem(:rake)
+    gem(:active_wrapper) { require 'active_wrapper/tasks' }
+  end
 end
