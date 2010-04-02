@@ -38,7 +38,7 @@ module Mover
       # Callbacks
       collector = lambda do |(classes, block)|
         classes.collect! { |c| eval(c.to_s) }
-        block if classes.include?(to_class) || to_class.empty?
+        block if classes.include?(to_class) || classes.empty?
       end
       before = (@before_move || []).collect(&collector).compact
       after = (@after_move || []).collect(&collector).compact
