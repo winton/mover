@@ -2,72 +2,87 @@ require File.expand_path("#{File.dirname(__FILE__)}/../require")
 Require.lib!
 
 module Mover
-  module Base
-    def self.included(base)
-      unless base.included_modules.include?(Included)
-        base.extend ClassMethods
-        base.send :include, Included
-      end
-    end
-  
-    module ClassMethods
-      def is_movable(*types)
-        @movable_types = types
-        
-        self.class_eval do
-          attr_accessor :movable_id
-          class <<self
-            attr_reader :movable_types
-          end
-        end
-        
-        types.each do |type|
-          class_name = "::#{self.name}#{type.to_s.classify}"
-          klass = eval(class_name) rescue nil
-          
-          eval_me = <<-RUBY
-            self.table_name = "#{self.table_name}_#{type}"
-            include Mover::Base::Record::InstanceMethods
-            def self.movable_type; #{type.inspect}; end
-            def moved_from_class; #{self.name}; end
-          RUBY
-          
-          if klass
-            klass.class_eval(eval_me)
-          else
-            eval <<-RUBY
-              class #{class_name} < ActiveRecord::Base
-                #{eval_me}
-              end
-            RUBY
-          end
-        end
-        
-        extend Table
-        extend Record::ClassMethods
-        include Record::InstanceMethods
-      end
+  def self.included(base)
+    unless base.included_modules.include?(InstanceMethods)
+      base.extend ClassMethods
+      base.send :include, InstanceMethods
     end
   end
   
-  module Migration
-    def self.included(base)
-      unless base.included_modules.include?(Included)
-        base.extend Migrator
-        base.send :include, Included
-        base.class_eval do
-          class <<self
-            alias_method :method_missing_without_mover, :method_missing
-            alias_method :method_missing, :method_missing_with_mover
-          end
+  module ClassMethods
+    
+    def after_move_to(to_class, &block)
+      @after_move_to ||= []
+      @after_move_to << [ to_class, block ]
+    end
+    
+    def before_move_to(to_class, &block)
+      @before_move_to ||= []
+      @before_move_to << [ to_class, block ]
+    end
+    
+    def move_to(to_class, conditions, instance=nil)
+      from_class = self
+      # Conditions
+      add_conditions! where = '', conditions
+      # Columns
+      insert = from_class.column_names & to_class.column_names
+      insert -= [ 'moved_at' ]
+      insert.collect! { |col| connection.quote_column_name(col) }
+      select = insert.clone
+      # Magic columns
+      if to_class.column_names.include?('moved_at')
+        insert << connection.quote_column_name('moved_at')
+        select << connection.quote(Time.now.utc)
+      end
+      # Callbacks
+      collector = lambda { |(klass, block)| block if eval(klass.to_s) == to_class }
+      before = (@before_move_to || []).collect(&collector).compact
+      after = (@after_move_to || []).collect(&collector).compact
+      # Instances
+      instances =
+        if instance
+          [ instance ]
+        elsif before.empty? && after.empty?
+          []
+        else
+          self.find(:all, :conditions => where[5..-1])
+        end
+      # Callback executor
+      exec_callbacks = lambda do |callbacks|
+        callbacks.each do |block|
+          instances.each { |instance| instance.instance_eval(&block) }
         end
       end
+      # Execute
+      transaction do
+        exec_callbacks.call before
+        connection.execute(<<-SQL)
+          INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
+          SELECT #{select.join(', ')}
+          FROM #{from_class.table_name}
+          #{where}
+        SQL
+        connection.execute("DELETE FROM #{from_class.table_name} #{where}")
+        exec_callbacks.call after
+      end
+    end
+    
+    def reserve_id
+      id = nil
+      transaction do
+        id = connection.insert("INSERT INTO #{self.table_name} () VALUES ()")
+        connection.execute("DELETE FROM #{self.table_name} WHERE id = #{id}") if id
+      end
+      id
     end
   end
   
-  module Included
+  module InstanceMethods
+    def move_to(to_class)
+      self.class.move_to(to_class, "#{self.class.primary_key} = #{id}", self)
+    end
   end
 end
 
-ActiveRecord::Base.send(:include, Mover::Base)
-ActiveRecord::Migration.send(:include, Mover::Migration)
+ActiveRecord::Base.send(:include, Mover)

@@ -10,86 +10,61 @@ Requirements
 sudo gem install mover
 </pre>
 
-<a name="create_the_movable_table"></a>
-
-Create the movable table
-------------------------
-
-Migration:
+Move records
+------------
 
 <pre>
-class CreateArticlesArchive < ActiveRecord::Migration
-  def self.up
-    Article.create_movable_table(
-      :archive,
-      :columns => %w(id title body created_at),
-      :indexes => %w(id created_at)
-    )
-    add_column :articles_archive, :move_id, :string
-    add_column :articles_archive, :moved_at, :datetime
-  end
-
-  def self.down
-    Article.drop_movable_table(:archive)
-  end
-end
+Article.last.move_to(ArticleArchive)
+Article.move_to(ArticleArchive, [ "created_at > ?", Date.today ])
 </pre>
 
-The first parameter names your movable table. In this example, the table is named <code>articles_archive</code>.
+The <code>move_to</code> method is available to all models.
 
-Options:
+The two tables do not have to be identical. Only shared columns transfer.
 
-* <code>:columns</code> - Only use certain columns from the original table. Defaults to all.
-* <code>:indexes</code> - Only create certain indexes. Defaults to all.
+Callbacks
+---------
 
-We also added two columns, <code>move\_id</code> and <code>moved\_at</code>. These are <a href="#magic_columns">magic columns</a>.
+In this example, we want an "archive" table for articles and comments.
 
-<a name="define_the_model"></a>
-
-Define the model
-----------------
+We also want the article's comments to be archived when the article is.
 
 <pre>
 class Article < ActiveRecord::Base
-  is_movable :archive
+  has_many :comments
+  before_move_to :ArticleArchive do
+    comments.each { |c| c.move_to(CommentArchive) }
+  end
+end
+
+class ArticleArchive < ActiveRecord::Base
+  has_many :comments, :class_name => 'CommentArchive', :foreign_key => 'article_id'
+  before_move_to :Article do
+    comments.each { |c| c.move_to(Comment) }
+  end
+end
+
+class Comment < ActiveRecord::Base
+  belongs_to :article
+end
+
+class CommentArchive < ActiveRecord::Base
+  belongs_to :article, :class_name => 'ArticleArchive', :foreign_key => 'article_id'
 end
 </pre>
 
-The <code>is_movable</code> method takes any number of parameters for multiple movable tables.
-
-Moving records
+Reserve a spot
 --------------
 
-<pre>
-Article.last.move_to(:archive)
-Article.move_to(:archive, [ "created_at > ?", Date.today ])
-</pre>
-
-Associations move if they are movable and if all movable tables have a <code>move_id</code> column (see <a href="#magic_columns">magic columns</a>).
-
-Restoring records
------------------
+Before you create a record, you can "reserve a spot" on a table that you will move the record to later.
 
 <pre>
-Article.move_from(:archive, [ "created_at > ?", Date.today ])
-ArticleArchive.last.move_from
+ArticleArchive.create(:id => Article.reserve_id)
 </pre>
-
-You can access the movable table by appending its name to the original class name. In this example, you would use <code>ArticleArchive</code>.
-
-<a name="magic_columns"></a>
 
 Magic columns
 -------------
 
-### move_id
-
-By default, restoring a record will only restore itself and not its movable relationships.
-
-To restore the relationships automatically, add the <code>move_id</code> column to all movable tables involved.
-
 ### moved_at
 
-If you need to know when the record was moved, add the <code>moved\_at</code> column to your movable table.
-
-See the <a href="#create_the_movable_table">create the movable table</a> section for an example of how to add the magic columns.
+If a table contains the column <code>moved_at</code>, it will automatically be populated with the date and time it was moved.

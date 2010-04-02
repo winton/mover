@@ -24,7 +24,7 @@ def connection
   ActiveRecord::Base.connection
 end
 
-def create_records(klass=Article, values={})
+def create_records(klass, values={})
   klass.delete_all
   (1..5).collect do |x|
     klass.column_names.each do |column|
@@ -37,12 +37,4 @@ def create_records(klass=Article, values={})
     values[:id] = x
     klass.create(values)
   end
-end
-
-def migrate_with_state(version)
-  @old_article_columns = columns("articles")
-  @old_archive_columns = columns("articles_archive")
-  $db.migrate(version)
-  @new_article_columns = columns("articles")
-  @new_archive_columns = columns("articles_archive")
 end

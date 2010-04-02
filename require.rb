@@ -17,17 +17,11 @@ Require do
     name 'mover'
     homepage "http://github.com/winton/#{name}"
     summary "Move ActiveRecord records across tables like it ain't no thang"
-    version '0.1.1'
+    version '0.2.0'
   end
   
   bin { require 'lib/mover' }
-  
-  lib do
-    require 'digest/md5'
-    require 'lib/mover/migrator'
-    require 'lib/mover/record'
-    require 'lib/mover/table'
-  end
+  lib {}
   
   rakefile do
     gem(:active_wrapper)
@@ -44,6 +38,8 @@ Require do
     require 'rails/init'
     require 'pp'
     require 'spec/fixtures/article'
+    require 'spec/fixtures/article_archive'
     require 'spec/fixtures/comment'
+    require 'spec/fixtures/comment_archive'
   end
 end

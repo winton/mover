@@ -1,4 +1,6 @@
 class Article < ActiveRecord::Base
   has_many :comments
-  is_movable :archive, :draft
+  before_move_to :ArticleArchive do
+    comments.each { |c| c.move_to(CommentArchive) }
+  end
 end
