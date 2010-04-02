@@ -11,12 +11,12 @@ module Mover
   
   module ClassMethods
     
-    def after_move(to_class, &block)
+    def after_move(*to_class, &block)
       @after_move ||= []
       @after_move << [ to_class, block ]
     end
     
-    def before_move(to_class, &block)
+    def before_move(*to_class, &block)
       @before_move ||= []
       @before_move << [ to_class, block ]
     end
@@ -36,7 +36,10 @@ module Mover
         select << connection.quote(Time.now.utc)
       end
       # Callbacks
-      collector = lambda { |(klass, block)| block if eval(klass.to_s) == to_class }
+      collector = lambda do |(classes, block)|
+        classes.collect! { |c| eval(c.to_s) }
+        block if classes.include?(to_class) || to_class.empty?
+      end
       before = (@before_move || []).collect(&collector).compact
       after = (@after_move || []).collect(&collector).compact
       # Instances
