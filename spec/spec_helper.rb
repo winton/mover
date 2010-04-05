@@ -28,13 +28,16 @@ def create_records(klass, values={})
   klass.delete_all
   (1..5).collect do |x|
     klass.column_names.each do |column|
+      next if column == 'id'
       if column == 'article_id'
         values[:article_id] = x
       else
         values[column.intern] = "#{klass} #{x} #{column}"
       end
     end
-    values[:id] = x
-    klass.create(values)
+    record = klass.new
+    record.id = x
+    record.update_attributes(values)
+    record
   end
 end

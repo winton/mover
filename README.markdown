@@ -59,7 +59,9 @@ Reserve a spot
 Before you create a record, you can "reserve a spot" on a table that you will move the record to later.
 
 <pre>
-ArticleArchive.create(:id => Article.reserve_id)
+archive = ArticleArchive.new
+archive.id = Article.reserve_id
+archive.save
 </pre>
 
 Magic columns
