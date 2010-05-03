@@ -3,4 +3,7 @@ class ArticleArchive < ActiveRecord::Base
   before_move :Article do
     comments.each { |c| c.move_to(Comment) }
   end
+  before_copy :Article do
+    comments.each { |c| c.copy_to(Comment) }
+  end
 end

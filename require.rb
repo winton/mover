@@ -33,6 +33,7 @@ Require do
   rails_init { require 'lib/mover' }
   
   spec_helper do
+    require 'fileutils'
     gem(:active_wrapper)
     require 'require/spec_helper'
     require 'rails/init'

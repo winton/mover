@@ -2,6 +2,31 @@ require 'spec_helper'
 
 describe Mover do
   
+  describe :copy_to do
+
+    before(:each) do
+      [ 1, 0, 1 ].each { |v| $db.migrate(v) }
+      @articles = create_records(Article)
+      @comments = create_records(Comment)
+      @articles[0].copy_to(ArticleArchive)
+      Article.copy_to(ArticleArchive, [ 'id = ?', 2 ])
+    end
+
+    describe 'should copy both articles and their associations' do
+      it "should copy articles" do
+        Article.count.should == 5
+        Comment.count.should == 5
+        ArticleArchive.count.should == 2
+        CommentArchive.count.should == 2
+        Article.find_by_id(1).nil?.should == false
+        Comment.find_by_id(2).nil?.should == false
+        ArticleArchive.find_by_id(1).nil?.should == false
+        CommentArchive.find_by_id(2).nil?.should == false
+      end
+    end
+
+  end
+
   describe :move_to do
   
     before(:each) do

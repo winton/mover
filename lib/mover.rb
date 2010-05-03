@@ -21,7 +21,17 @@ module Mover
       @before_move << [ to_class, block ]
     end
     
-    def move_to(to_class, conditions, instance=nil)
+    def after_copy(*to_class, &block)
+      @after_copy ||= []
+      @after_copy << [ to_class, block ]
+    end
+
+    def before_copy(*to_class, &block)
+      @before_copy ||= []
+      @before_copy << [ to_class, block ]
+    end
+
+    def move_to(to_class, conditions, instance=nil, copy = false)
       from_class = self
       # Conditions
       add_conditions! where = '', conditions
@@ -40,8 +50,13 @@ module Mover
         classes.collect! { |c| eval(c.to_s) }
         block if classes.include?(to_class) || classes.empty?
       end
-      before = (@before_move || []).collect(&collector).compact
-      after = (@after_move || []).collect(&collector).compact
+      if copy
+        before = (@before_copy || []).collect(&collector).compact
+        after = (@after_copy || []).collect(&collector).compact
+      else # move
+        before = (@before_move || []).collect(&collector).compact
+        after = (@after_move || []).collect(&collector).compact
+      end
       # Instances
       instances =
         if instance
@@ -66,11 +81,15 @@ module Mover
           FROM #{from_class.table_name}
           #{where}
         SQL
-        connection.execute("DELETE FROM #{from_class.table_name} #{where}")
+        connection.execute("DELETE FROM #{from_class.table_name} #{where}") unless copy
         exec_callbacks.call after
       end
     end
-    
+
+    def copy_to(to_class, conditions, instance=nil)
+      move_to(to_class, conditions, instance, true)
+    end
+
     def reserve_id
       id = nil
       transaction do
@@ -84,6 +103,10 @@ module Mover
   module InstanceMethods
     def move_to(to_class)
       self.class.move_to(to_class, "#{self.class.primary_key} = #{id}", self)
+    end
+
+    def copy_to(to_class)
+      self.class.copy_to(to_class, "#{self.class.primary_key} = #{id}", self)
     end
   end
 end
