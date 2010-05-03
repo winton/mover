@@ -17,7 +17,7 @@ Require do
     name 'mover'
     homepage "http://github.com/winton/#{name}"
     summary "Move ActiveRecord records across tables like it ain't no thang"
-    version '0.2.0'
+    version '0.2.1'
   end
   
   bin { require 'lib/mover' }
