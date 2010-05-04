@@ -75,13 +75,54 @@ module Mover
       # Execute
       transaction do
         exec_callbacks.call before
-        connection.execute(<<-SQL)
-          INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-          SELECT #{select.join(', ')}
-          FROM #{from_class.table_name}
-          #{where}
-        SQL
-        connection.execute("DELETE FROM #{from_class.table_name} #{where}") unless copy
+        if copy
+          # for copy existing rows require an UPDATE statment, new rows require an INSERT statement
+          from_ids   = from_class.find(:all, :select => "id", :conditions => where[5..-1]).collect(&:id)
+          to_ids     = to_class.find(:all, :select => "id", :conditions => where[5..-1]).collect(&:id)
+          trash_ids  = to_ids - from_ids
+          # rid of the 'extra' to_ids to ensure to_ids is always be a subset of from_ids
+          insert_ids = from_ids - to_ids - trash_ids
+          update_ids = to_ids - insert_ids - trash_ids
+          
+          unless update_ids.empty?
+            # add table scope to columns for the UPDATE statement
+            update = []
+            insert.each_with_index{|col, i|
+              to   = insert[i].include?('`') ? "#{to_class.table_name}.#{insert[i]}"   : insert[i]
+              from = select[i].include?('`') ? "#{from_class.table_name}.#{select[i]}" : select[i]
+              update << "#{to} = #{from}"
+            }
+            where_ids = update_ids.collect{|x| "#{from_class.table_name}.id = #{x}"}
+            connection.execute(<<-SQL)
+              UPDATE #{to_class.table_name}
+              INNER JOIN #{from_class.table_name}
+              ON #{to_class.table_name}.id = #{from_class.table_name}.id
+              AND (#{where_ids.join(' AND ')})
+              SET #{update.join(', ')}
+            SQL
+          end
+
+          unless insert_ids.empty?
+            # insert ids, same as move except using a different where clause
+            where_ids = insert_ids.collect{|x| "#{from_class.table_name}.id = #{x}"}
+            sql =<<-SQL
+              INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
+              SELECT #{select.join(', ')}
+              FROM #{from_class.table_name}
+              WHERE (#{where_ids.join(' OR ')})
+            SQL
+            connection.execute(sql)
+          end
+        else
+          # moves
+          connection.execute(<<-SQL)
+            INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
+            SELECT #{select.join(', ')}
+            FROM #{from_class.table_name}
+            #{where}
+          SQL
+          connection.execute("DELETE FROM #{from_class.table_name} #{where}")
+        end
         exec_callbacks.call after
       end
     end

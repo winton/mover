@@ -9,22 +9,29 @@ describe Mover do
       @articles = create_records(Article)
       @comments = create_records(Comment)
       @articles[0].copy_to(ArticleArchive)
-      Article.copy_to(ArticleArchive, [ 'id = ?', 2 ])
     end
 
     describe 'should copy both articles and their associations' do
       it "should copy articles" do
+        Article.copy_to(ArticleArchive, [ 'id = ? OR id = ? OR id = ?', 1, 2, 3 ])
         Article.count.should == 5
         Comment.count.should == 5
-        ArticleArchive.count.should == 2
-        CommentArchive.count.should == 2
-        Article.find_by_id(1).nil?.should == false
-        Comment.find_by_id(2).nil?.should == false
-        ArticleArchive.find_by_id(1).nil?.should == false
-        CommentArchive.find_by_id(2).nil?.should == false
+        ArticleArchive.count.should == 3
+        CommentArchive.count.should == 3
       end
     end
 
+    describe 'should overwrite first copy if copied twice' do
+      it "should copy articles" do
+        Article.find(1).update_attributes(:title => 'foobar edited')
+        Article.copy_to(ArticleArchive, [ 'id = ? OR id = ? OR id = ?', 1, 2, 3 ])
+        ArticleArchive.find(1).title.should == 'foobar edited'
+        Article.count.should == 5
+        Comment.count.should == 5
+        ArticleArchive.count.should == 3
+        CommentArchive.count.should == 3
+      end
+    end
   end
 
   describe :move_to do
@@ -38,7 +45,7 @@ describe Mover do
     end
   
     describe 'move records' do
-    
+  
       it "should move both articles and their associations" do
         Article.count.should == 3
         Comment.count.should == 3
@@ -55,19 +62,19 @@ describe Mover do
         comments.length.should == 1
         comments.first.id.should == 2
       end
-      
+  
       it "should assign moved_at" do
         ArticleArchive.find_by_id(1).moved_at.utc.to_s.should == Time.now.utc.to_s
       end
     end
   
     describe 'move records back' do
-    
+  
       before(:each) do
         ArticleArchive.find(1).move_to(Article)
         ArticleArchive.move_to(Article, [ 'id = ?', 2 ])
       end
-    
+  
       it "should move both articles and their associations" do
         Article.count.should == 5
         Comment.count.should == 5
@@ -91,7 +98,7 @@ describe Mover do
     it "should return an id" do
       Article.reserve_id.class.should == Fixnum
     end
-    
+  
     it "should delete the record" do
       id = Article.reserve_id
       Article.find_by_id(id).should == nil
