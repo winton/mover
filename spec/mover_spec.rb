@@ -3,28 +3,28 @@ require 'spec_helper'
 describe Mover do
   
   describe :copy_to do
-
+  
     before(:each) do
       [ 1, 0, 1 ].each { |v| $db.migrate(v) }
       @articles = create_records(Article)
       @comments = create_records(Comment)
       @articles[0].copy_to(ArticleArchive)
     end
-
+  
     describe 'should copy both articles and their associations' do
       it "should copy articles" do
-        Article.copy_to(ArticleArchive, [ 'id = ? OR id = ? OR id = ?', 1, 2, 3 ])
+        Article.copy_to(ArticleArchive, [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ])
         Article.count.should == 5
         Comment.count.should == 5
         ArticleArchive.count.should == 3
         CommentArchive.count.should == 3
       end
     end
-
+  
     describe 'should overwrite first copy if copied twice' do
       it "should copy articles" do
         Article.find(1).update_attributes(:title => 'foobar edited')
-        Article.copy_to(ArticleArchive, [ 'id = ? OR id = ? OR id = ?', 1, 2, 3 ])
+        Article.copy_to(ArticleArchive, [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ])
         ArticleArchive.find(1).title.should == 'foobar edited'
         Article.count.should == 5
         Comment.count.should == 5
@@ -33,7 +33,7 @@ describe Mover do
       end
     end
   end
-
+  
   describe :move_to do
   
     before(:each) do
@@ -41,7 +41,7 @@ describe Mover do
       @articles = create_records(Article)
       @comments = create_records(Comment)
       @articles[0].move_to(ArticleArchive)
-      Article.move_to(ArticleArchive, [ 'id = ?', 2 ])
+      Article.move_to(ArticleArchive, [ 'articles.id = ?', 2 ])
     end
   
     describe 'move records' do
@@ -72,7 +72,7 @@ describe Mover do
   
       before(:each) do
         ArticleArchive.find(1).move_to(Article)
-        ArticleArchive.move_to(Article, [ 'id = ?', 2 ])
+        ArticleArchive.move_to(Article, [ 'article_archives.id = ?', 2 ])
       end
   
       it "should move both articles and their associations" do

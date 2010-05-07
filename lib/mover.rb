@@ -33,18 +33,23 @@ module Mover
 
     def move_to(to_class, conditions, instance=nil, copy = false)
       from_class = self
+      
       # Conditions
       add_conditions! where = '', conditions
+      conditions = where[5..-1]
+      
       # Columns
       insert = from_class.column_names & to_class.column_names
       insert -= [ 'moved_at' ]
       insert.collect! { |col| connection.quote_column_name(col) }
       select = insert.clone
+      
       # Magic columns
       if to_class.column_names.include?('moved_at')
         insert << connection.quote_column_name('moved_at')
         select << connection.quote(Time.now.utc)
       end
+      
       # Callbacks
       collector = lambda do |(classes, block)|
         classes.collect! { |c| eval(c.to_s) }
@@ -57,6 +62,7 @@ module Mover
         before = (@before_move || []).collect(&collector).compact
         after = (@after_move || []).collect(&collector).compact
       end
+      
       # Instances
       instances =
         if instance
@@ -64,65 +70,49 @@ module Mover
         elsif before.empty? && after.empty?
           []
         else
-          self.find(:all, :conditions => where[5..-1])
+          self.find(:all, :conditions => conditions)
         end
+      
       # Callback executor
       exec_callbacks = lambda do |callbacks|
         callbacks.each do |block|
           instances.each { |instance| instance.instance_eval(&block) }
         end
       end
+      
       # Execute
       transaction do
         exec_callbacks.call before
-        if copy
-          # for copy existing rows require an UPDATE statment, new rows require an INSERT statement
-          from_ids   = from_class.find(:all, :select => "id", :conditions => where[5..-1]).collect(&:id)
-          to_ids     = to_class.find(:all, :select => "id", :conditions => where[5..-1]).collect(&:id)
-          trash_ids  = to_ids - from_ids
-          # rid of the 'extra' to_ids to ensure to_ids is always be a subset of from_ids
-          insert_ids = from_ids - to_ids - trash_ids
-          update_ids = to_ids - insert_ids - trash_ids
-          
-          unless update_ids.empty?
-            # add table scope to columns for the UPDATE statement
-            update = []
-            insert.each_with_index{|col, i|
-              to   = insert[i].include?('`') ? "#{to_class.table_name}.#{insert[i]}"   : insert[i]
-              from = select[i].include?('`') ? "#{from_class.table_name}.#{select[i]}" : select[i]
-              update << "#{to} = #{from}"
-            }
-            where_ids = update_ids.collect{|x| "#{from_class.table_name}.id = #{x}"}
-            connection.execute(<<-SQL)
-              UPDATE #{to_class.table_name}
-              INNER JOIN #{from_class.table_name}
-              ON #{to_class.table_name}.id = #{from_class.table_name}.id
-              AND (#{where_ids.join(' AND ')})
-              SET #{update.join(', ')}
-            SQL
-          end
-
-          unless insert_ids.empty?
-            # insert ids, same as move except using a different where clause
-            where_ids = insert_ids.collect{|x| "#{from_class.table_name}.id = #{x}"}
-            sql =<<-SQL
-              INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-              SELECT #{select.join(', ')}
-              FROM #{from_class.table_name}
-              WHERE (#{where_ids.join(' OR ')})
-            SQL
-            connection.execute(sql)
-          end
-        else
-          # moves
-          connection.execute(<<-SQL)
-            INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-            SELECT #{select.join(', ')}
-            FROM #{from_class.table_name}
-            #{where}
-          SQL
+        conditions = conditions.gsub(to_class.table_name, 't').gsub(from_class.table_name, 'f')
+        
+        connection.execute(<<-SQL)
+          UPDATE #{to_class.table_name}
+            AS t
+          INNER JOIN #{from_class.table_name}
+            AS f
+          ON f.id = t.id
+            AND #{conditions}
+          SET #{insert.collect { |i| "t.#{i} = f.#{i}" }.join(', ')}
+        SQL
+        
+        connection.execute(<<-SQL)
+          INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
+          SELECT #{select.collect { |s| s.include?('`') ? "f.#{s}" : s }.join(', ')}
+          FROM #{from_class.table_name}
+            AS f
+          LEFT OUTER JOIN #{to_class.table_name}
+            AS t
+          ON f.id = t.id
+          WHERE (
+            t.id IS NULL
+            AND #{conditions}
+          )
+        SQL
+        
+        unless copy
           connection.execute("DELETE FROM #{from_class.table_name} #{where}")
         end
+        
         exec_callbacks.call after
       end
     end
@@ -143,11 +133,11 @@ module Mover
   
   module InstanceMethods
     def move_to(to_class)
-      self.class.move_to(to_class, "#{self.class.primary_key} = #{id}", self)
+      self.class.move_to(to_class, "#{self.class.table_name}.#{self.class.primary_key} = #{id}", self)
     end
 
     def copy_to(to_class)
-      self.class.copy_to(to_class, "#{self.class.primary_key} = #{id}", self)
+      self.class.copy_to(to_class, "#{self.class.table_name}.#{self.class.primary_key} = #{id}", self)
     end
   end
 end

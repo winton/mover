@@ -18,9 +18,16 @@ Article.last.move_to(ArticleArchive)
 Article.move_to(ArticleArchive, [ "created_at > ?", Date.today ])
 </pre>
 
-The <code>move_to</code> method is available to all models.
+The <code>move\_to</code> method is available to all models.
 
 The two tables do not have to be identical. Only shared columns transfer.
+
+If a record with a similar id already exists, it will perform an update.
+
+Copy records
+------------
+
+You may also use <code>copy\_to</code> if you do not wish to destroy the original.
 
 Callbacks
 ---------
@@ -52,6 +59,8 @@ class CommentArchive < ActiveRecord::Base
   belongs_to :article, :class_name => 'ArticleArchive', :foreign_key => 'article_id'
 end
 </pre>
+
+You may also use <code>after\_move</code>, <code>before\_copy</code>, and <code>after\_copy</code>.
 
 Reserve a spot
 --------------
