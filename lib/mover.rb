@@ -99,6 +99,7 @@ module Mover
         else
           conditions.gsub!(to_class.table_name, 't')
           conditions.gsub!(from_class.table_name, 'f')
+          select.collect! { |s| s.include?('`') ? "f.#{s}" : s }
           set = insert.collect { |i| "t.#{i} = f.#{i}" }
           
           connection.execute(<<-SQL)
@@ -113,7 +114,7 @@ module Mover
       
           connection.execute(<<-SQL)
             INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-            SELECT #{select.collect { |s| s.include?('`') ? "f.#{s}" : s }.join(', ')}
+            SELECT #{select.join(', ')}
             FROM #{from_class.table_name}
               AS f
             LEFT OUTER JOIN #{to_class.table_name}
