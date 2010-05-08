@@ -60,6 +60,7 @@ module Mover
         else
           self.find(:all, :conditions => conditions)
         end
+      options.delete(:instance)
       
       # Callback executor
       exec_callbacks = lambda do |callbacks|
