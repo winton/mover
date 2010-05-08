@@ -13,13 +13,13 @@ sudo gem install mover
 Move records
 ------------
 
-Move the last article to the <code>article_archives</code> table:
+Move the last article:
 
 <pre>
 Article.last.move_to(ArticleArchive)
 </pre>
 
-Move today's articles to the <code>article_archives</code> table:
+Move today's articles:
 
 <pre>
 Article.move_to(
@@ -30,7 +30,7 @@ Article.move_to(
 
 The two tables do not have to be identical. Only shared columns transfer.
 
-If a record with the same primary key already exists, an update occurs.
+If a primary key collision occurs, the destination record is updated.
 
 Callbacks
 ---------
@@ -79,9 +79,10 @@ There are other options, in addition to <code>conditions</code>:
 Article.move_to(
   ArticleArchive,
   :copy => true,          # Do not delete Article after move
-  :generic => true,       # UPDATE using a JOIN instead of ON DUPLICATE KEY UPDATE (slower on MySQL)
+  :generic => true,       # UPDATE using a JOIN instead of ON DUPLICATE KEY UPDATE (default on non-MySQL engines)
   :magic => 'updated_at', # Custom magic column
-  :quick => true          # You are certain only INSERTs are necessary, no UPDATEs
+  :quick => true          # You are certain only INSERTs are necessary, no primary key collisions possible
+                          # May only be a little faster on MySQL, but dramatically faster on other engines
 )
 </pre>
 
