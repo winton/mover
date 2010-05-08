@@ -6,6 +6,7 @@ module Mover
     unless base.included_modules.include?(InstanceMethods)
       base.extend ClassMethods
       base.send :include, InstanceMethods
+      base.send :attr_accessor, :move_options
     end
   end
   
@@ -20,21 +21,6 @@ module Mover
       @before_move ||= []
       @before_move << [ to_class, block ]
     end
-    
-    def after_copy(*to_class, &block)
-      @after_copy ||= []
-      @after_copy << [ to_class, block ]
-    end
-
-    def before_copy(*to_class, &block)
-      @before_copy ||= []
-      @before_copy << [ to_class, block ]
-    end
-    
-    def copy_to(to_class, options={})
-      options[:copy] = true
-      move_to(to_class, options)
-    end
 
     def move_to(to_class, options={})
       from_class = self
@@ -45,14 +31,15 @@ module Mover
       conditions = where[5..-1]
       
       # Columns
+      magic = options[:magic] || 'moved_at'
       insert = from_class.column_names & to_class.column_names
-      insert -= [ 'moved_at' ]
+      insert -= [ magic ]
       insert.collect! { |col| connection.quote_column_name(col) }
       select = insert.clone
       
       # Magic columns
-      if to_class.column_names.include?('moved_at')
-        insert << connection.quote_column_name('moved_at')
+      if to_class.column_names.include?(magic)
+        insert << connection.quote_column_name(magic)
         select << connection.quote(Time.now.utc)
       end
       
@@ -61,13 +48,8 @@ module Mover
         classes.collect! { |c| eval(c.to_s) }
         block if classes.include?(to_class) || classes.empty?
       end
-      if options[:copy]
-        before = (@before_copy || []).collect(&collector).compact
-        after = (@after_copy || []).collect(&collector).compact
-      else
-        before = (@before_move || []).collect(&collector).compact
-        after = (@after_move || []).collect(&collector).compact
-      end
+      before = (@before_move || []).collect(&collector).compact
+      after = (@after_move || []).collect(&collector).compact
       
       # Instances
       instances =
@@ -82,7 +64,11 @@ module Mover
       # Callback executor
       exec_callbacks = lambda do |callbacks|
         callbacks.each do |block|
-          instances.each { |instance| instance.instance_eval(&block) }
+          instances.each do |instance|
+            instance.move_options = options
+            instance.instance_eval(&block)
+            instance.move_options = nil
+          end
         end
       end
       
@@ -159,11 +145,6 @@ module Mover
   end
   
   module InstanceMethods
-    def copy_to(to_class, options={})
-      options[:conditions] = "#{self.class.table_name}.#{self.class.primary_key} = #{id}"
-      options[:instance] = self
-      self.class.copy_to(to_class, options)
-    end
     
     def move_to(to_class, options={})
       options[:conditions] = "#{self.class.table_name}.#{self.class.primary_key} = #{id}"

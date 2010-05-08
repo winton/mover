@@ -1,9 +1,6 @@
 class ArticleArchive < ActiveRecord::Base
   has_many :comments, :class_name => 'CommentArchive', :foreign_key => 'article_id'
   before_move :Article do
-    comments.each { |c| c.move_to(Comment) }
-  end
-  before_copy :Article do
-    comments.each { |c| c.copy_to(Comment) }
+    comments.each { |c| c.move_to(Comment, :copy => move_options[:copy]) }
   end
 end

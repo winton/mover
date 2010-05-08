@@ -15,19 +15,17 @@ Move records
 
 <pre>
 Article.last.move_to(ArticleArchive)
-Article.move_to(ArticleArchive, [ "created_at > ?", Date.today ])
+Article.move_to(
+  ArticleArchive,
+  :conditions => [ "created_at > ?", Date.today ]
+)
 </pre>
 
 The <code>move\_to</code> method is available to all models.
 
 The two tables do not have to be identical. Only shared columns transfer.
 
-If a record with a similar id already exists, it will perform an update.
-
-Copy records
-------------
-
-You may also use <code>copy\_to</code> if you do not wish to destroy the original.
+If a record with the same primary key already exists, it will perform an update.
 
 Callbacks
 ---------
@@ -60,7 +58,29 @@ class CommentArchive < ActiveRecord::Base
 end
 </pre>
 
-You may also use <code>after\_move</code>, <code>before\_copy</code>, and <code>after\_copy</code>.
+You may also use <code>after\_move</code>.
+
+Magic column
+------------
+
+If a table contains a column named <code>moved_at</code>, it will automatically be populated with the date and time it was moved.
+
+Options
+-------
+
+There are other options, in addition to <code>conditions</code>:
+
+<pre>
+Article.move_to(
+  ArticleArchive,
+  :copy => true,          # Do not delete Article after move
+  :generic => true,       # Do not use ON DUPLICATE KEY UPDATE (MySQL only, not recommended)
+  :magic => 'updated_at', # Custom magic column
+  :quick => true          # You are certain there will not be a primary key collision
+)
+</pre>
+
+You can access these options from callbacks using <code>move_options</code>.
 
 Reserve a spot
 --------------
@@ -72,10 +92,3 @@ archive = ArticleArchive.new
 archive.id = Article.reserve_id
 archive.save
 </pre>
-
-Magic columns
--------------
-
-### moved_at
-
-If a table contains the column <code>moved_at</code>, it will automatically be populated with the date and time it was moved.

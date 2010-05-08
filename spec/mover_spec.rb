@@ -2,20 +2,21 @@ require 'spec_helper'
 
 describe Mover do
   
-  describe :copy_to do
+  describe :copy do
   
     before(:each) do
       [ 1, 0, 1 ].each { |v| $db.migrate(v) }
       @articles = create_records(Article)
       @comments = create_records(Comment)
-      @articles[0].copy_to(ArticleArchive)
+      @articles[0].move_to(ArticleArchive, :copy => true)
     end
   
     describe 'should copy both articles and their associations' do
       it "should copy articles" do
-        Article.copy_to(
+        Article.move_to(
           ArticleArchive,
-          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ]
+          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ],
+          :copy => true
         )
         Article.count.should == 5
         Comment.count.should == 5
@@ -27,9 +28,10 @@ describe Mover do
     describe 'should overwrite first copy if copied twice' do
       it "should copy articles" do
         Article.find(1).update_attributes(:title => 'foobar edited')
-        Article.copy_to(
+        Article.move_to(
           ArticleArchive,
-          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ]
+          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ],
+          :copy => true
         )
         ArticleArchive.find(1).title.should == 'foobar edited'
         Article.count.should == 5
@@ -40,7 +42,7 @@ describe Mover do
     end
   end
   
-  describe :move_to do
+  describe :move do
   
     before(:each) do
       [ 1, 0, 1 ].each { |v| $db.migrate(v) }
