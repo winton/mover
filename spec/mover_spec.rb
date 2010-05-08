@@ -13,7 +13,10 @@ describe Mover do
   
     describe 'should copy both articles and their associations' do
       it "should copy articles" do
-        Article.copy_to(ArticleArchive, [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ])
+        Article.copy_to(
+          ArticleArchive,
+          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ]
+        )
         Article.count.should == 5
         Comment.count.should == 5
         ArticleArchive.count.should == 3
@@ -24,7 +27,10 @@ describe Mover do
     describe 'should overwrite first copy if copied twice' do
       it "should copy articles" do
         Article.find(1).update_attributes(:title => 'foobar edited')
-        Article.copy_to(ArticleArchive, [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ])
+        Article.copy_to(
+          ArticleArchive,
+          :conditions => [ 'articles.id = ? OR articles.id = ? OR articles.id = ?', 1, 2, 3 ]
+        )
         ArticleArchive.find(1).title.should == 'foobar edited'
         Article.count.should == 5
         Comment.count.should == 5
@@ -41,7 +47,10 @@ describe Mover do
       @articles = create_records(Article)
       @comments = create_records(Comment)
       @articles[0].move_to(ArticleArchive)
-      Article.move_to(ArticleArchive, [ 'articles.id = ?', 2 ])
+      Article.move_to(
+        ArticleArchive,
+        :conditions => [ 'articles.id = ?', 2 ]
+      )
     end
   
     describe 'move records' do
@@ -72,7 +81,10 @@ describe Mover do
   
       before(:each) do
         ArticleArchive.find(1).move_to(Article)
-        ArticleArchive.move_to(Article, [ 'article_archives.id = ?', 2 ])
+        ArticleArchive.move_to(
+          Article,
+          :conditions => [ 'article_archives.id = ?', 2 ]
+        )
       end
   
       it "should move both articles and their associations" do
