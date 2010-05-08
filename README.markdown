@@ -13,19 +13,24 @@ sudo gem install mover
 Move records
 ------------
 
+Move the last article to the <code>article_archives</code> table:
+
 <pre>
 Article.last.move_to(ArticleArchive)
+</pre>
+
+Move today's articles to the <code>article_archives</code> table:
+
+<pre>
 Article.move_to(
   ArticleArchive,
   :conditions => [ "created_at > ?", Date.today ]
 )
 </pre>
 
-The <code>move\_to</code> method is available to all models.
-
 The two tables do not have to be identical. Only shared columns transfer.
 
-If a record with the same primary key already exists, it will perform an update.
+If a record with the same primary key already exists, an update occurs.
 
 Callbacks
 ---------
@@ -58,12 +63,12 @@ class CommentArchive < ActiveRecord::Base
 end
 </pre>
 
-You may also use <code>after\_move</code>.
+The <code>after\_move</code> callback is also available.
 
 Magic column
 ------------
 
-If a table contains a column named <code>moved_at</code>, it will automatically be populated with the date and time it was moved.
+If a table contains a <code>moved_at</code> column, it will magically populate with the date and time it was moved.
 
 Options
 -------
@@ -74,9 +79,9 @@ There are other options, in addition to <code>conditions</code>:
 Article.move_to(
   ArticleArchive,
   :copy => true,          # Do not delete Article after move
-  :generic => true,       # Do not use ON DUPLICATE KEY UPDATE (MySQL only, not recommended)
+  :generic => true,       # UPDATE using a JOIN instead of ON DUPLICATE KEY UPDATE (slower on MySQL)
   :magic => 'updated_at', # Custom magic column
-  :quick => true          # You are certain there will not be a primary key collision
+  :quick => true          # You are certain only INSERTs are necessary, no UPDATEs
 )
 </pre>
 
