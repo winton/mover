@@ -1,7 +1,13 @@
-require File.expand_path("#{File.dirname(__FILE__)}/../require")
-Require.lib!
+require File.dirname(__FILE__) + '/mover/gems'
+
+Mover::Gems.require(:lib)
+
+$:.unshift File.dirname(__FILE__) + '/mover'
+
+require 'version'
 
 module Mover
+  
   def self.included(base)
     unless base.included_modules.include?(InstanceMethods)
       base.extend ClassMethods
@@ -27,8 +33,8 @@ module Mover
       
       # Conditions
       conditions = options[:conditions] || '1'
-      add_conditions!(where = '', conditions)
-      conditions = where[5..-1]
+      conditions = self.sanitize_sql(conditions)
+      where = "WHERE #{conditions}"
       
       # Columns
       magic = options[:magic] || 'moved_at'

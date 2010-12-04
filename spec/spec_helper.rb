@@ -1,5 +1,18 @@
-require File.expand_path("#{File.dirname(__FILE__)}/../require")
-Require.spec_helper!
+$root = File.expand_path('../../', __FILE__)
+require "#{$root}/lib/mover/gems"
+
+Mover::Gems.require(:spec)
+
+require 'active_wrapper'
+require 'fileutils'
+
+require "#{$root}/lib/mover"
+require 'pp'
+
+require "#{$root}/spec/fixtures/article"
+require "#{$root}/spec/fixtures/article_archive"
+require "#{$root}/spec/fixtures/comment"
+require "#{$root}/spec/fixtures/comment_archive"
 
 Spec::Runner.configure do |config|
 end
@@ -40,4 +53,11 @@ def create_records(klass, values={})
     record.update_attributes(values)
     record
   end
+end
+
+# For use with rspec textmate bundle
+def debug(object)
+  puts "<pre>"
+  puts object.pretty_inspect.gsub('<', '&lt;').gsub('>', '&gt;')
+  puts "</pre>"
 end
