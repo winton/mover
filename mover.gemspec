@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   s.authors = ["Winton Welsh"]
   s.email = ["mail@wintoni.us"]
   s.homepage = "http://github.com/winton/mover"
-  s.summary = ""
-  s.description = ""
+  s.summary = "Move ActiveRecord records across tables like it ain't no thang"
+  s.description = "Move ActiveRecord records across tables like it ain't no thang"
 
   Mover::Gems::TYPES[:gemspec].each do |g|
     s.add_dependency g.to_s, Mover::Gems::VERSIONS[g]
