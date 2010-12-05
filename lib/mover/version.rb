@@ -1,3 +1,3 @@
 module Mover
-  VERSION = "0.2.3" unless defined?(::Mover::VERSION)
+  VERSION = "0.3.0" unless defined?(::Mover::VERSION)
 end
