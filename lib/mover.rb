@@ -46,7 +46,11 @@ module Mover
       # Magic columns
       if to_class.column_names.include?(magic)
         insert << connection.quote_column_name(magic)
-        select << connection.quote(Time.now.utc)
+        if options[:migrate]
+          select << connection.quote_column_name(magic)
+        else
+          select << connection.quote(Time.now.utc)
+        end
       end
       
       # Callbacks

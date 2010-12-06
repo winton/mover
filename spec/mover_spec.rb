@@ -99,7 +99,29 @@ describe Mover do
     end
   end
   
+  describe 'migrate magic column' do
+    
+    before(:each) do
+      [ 1, 0, 1 ].each { |v| $db.migrate(v) }
+      @moved_at = Time.now.utc - 60
+      @articles = create_records(Article, :moved_at => @moved_at)
+      @comments = create_records(Comment)
+      @articles[0].move_to(ArticleArchive, :migrate => true)
+      Article.move_to(
+        ArticleArchive,
+        :conditions => [ 'articles.id = ?', 2 ],
+        :migrate => true
+      )
+    end
+    
+    it "should migrate magic column" do
+      ArticleArchive.find(1).moved_at.to_s.should == @moved_at.to_s
+      ArticleArchive.find(2).moved_at.to_s.should == @moved_at.to_s
+    end
+  end
+  
   describe :reserve_id do
+    
     it "should return an id" do
       Article.reserve_id.class.should == Fixnum
     end

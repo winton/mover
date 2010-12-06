@@ -39,12 +39,13 @@ end
 
 def create_records(klass, values={})
   klass.delete_all
+  keys = values.keys
   (1..5).collect do |x|
     klass.column_names.each do |column|
       next if column == 'id'
-      if column == 'article_id'
+      if column == 'article_id' && !keys.include?(:article_id)
         values[:article_id] = x
-      else
+      elsif !keys.include?(column.intern)
         values[column.intern] = "#{klass} #{x} #{column}"
       end
     end

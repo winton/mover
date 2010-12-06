@@ -79,8 +79,9 @@ There are other options, in addition to <code>conditions</code>:
 Article.move_to(
   ArticleArchive,
   :copy => true,          # Do not delete Article after move
-  :generic => true,       # UPDATE using a JOIN instead of ON DUPLICATE KEY UPDATE (default on non-MySQL engines)
+  :generic => true,       # UPDATE using a JOIN instead of ON DUPLICATE KEY UPDATE (default: false on MySQL engines)
   :magic => 'updated_at', # Custom magic column
+  :migrate => true,       # Copies the original value of the magic column
   :quick => true          # You are certain only INSERTs are necessary, no primary key collisions possible
                           # May only be a little faster on MySQL, but dramatically faster on other engines
 )
