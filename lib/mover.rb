@@ -2,9 +2,9 @@ require File.dirname(__FILE__) + '/mover/gems'
 
 Mover::Gems.require(:lib)
 
-$:.unshift File.dirname(__FILE__) + '/mover'
+$:.unshift File.dirname(__FILE__)
 
-require 'version'
+require 'mover/version'
 
 module Mover
   
@@ -64,7 +64,7 @@ module Mover
       
       # Quote everything
       insert = insert.inject({}) do |hash, (column, value)|
-        if value.is_a?(Time)
+        if value.is_a?(::Time)
           hash[connection.quote_column_name(column)] = connection.quote(value)
         else
           hash[connection.quote_column_name(column)] = connection.quote_column_name(value)

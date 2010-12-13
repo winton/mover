@@ -17,7 +17,11 @@ require "#{$root}/spec/fixtures/comment_archive"
 Spec::Runner.configure do |config|
 end
 
+<<<<<<< HEAD
 $db, $log = ActiveWrapper.setup(
+=======
+$db, $log, $mail = ActiveWrapper.setup(
+>>>>>>> 7ed5d409dab030c027acf66cf1e889b7907c9aa0
   :base => File.dirname(__FILE__),
   :env => 'test'
 )
