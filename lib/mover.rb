@@ -96,7 +96,11 @@ module Mover
           SQL
         elsif !options[:generic] && connection.class.to_s.include?('Mysql')
           update = insert.collect do |i|
-            "#{to_class.table_name}.#{i} = #{from_class.table_name}.#{i}"
+            if i.include?("'")
+              "#{to_class.table_name}.#{i} = #{i}"
+            else
+              "#{to_class.table_name}.#{i} = #{from_class.table_name}.#{i}"
+            end
           end
           
           connection.execute(<<-SQL)
@@ -111,7 +115,13 @@ module Mover
           conditions.gsub!(to_class.table_name, 't')
           conditions.gsub!(from_class.table_name, 'f')
           select.collect! { |s| s.include?('`') ? "f.#{s}" : s }
-          set = insert.collect { |i| "t.#{i} = f.#{i}" }
+          set = insert.collect do |i|
+            if i.include?("'")
+              "t.#{i} = #{i}"
+            else
+              "t.#{i} = f.#{i}"
+            end
+          end
           
           connection.execute(<<-SQL)
             UPDATE #{to_class.table_name}
