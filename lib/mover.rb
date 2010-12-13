@@ -38,19 +38,38 @@ module Mover
       
       # Columns
       magic = options[:magic] || 'moved_at'
-      insert = from_class.column_names & to_class.column_names
-      insert -= [ magic ]
-      insert.collect! { |col| connection.quote_column_name(col) }
-      select = insert.clone
+      from = {
+        :columns => from_class.column_names,
+        :table => from_class.table_name
+      }
+      to = {
+        :columns => to_class.column_names,
+        :table => to_class.table_name
+      }
       
-      # Magic columns
-      if to_class.column_names.include?(magic)
-        insert << connection.quote_column_name(magic)
-        if options[:migrate]
-          select << connection.quote_column_name(magic)
+      # insert[column] = value
+      insert = (from[:columns] & to[:columns]).inject({}) do |hash, column|
+        if column == magic && !options[:migrate]
+          hash[column] = Time.now.utc
         else
-          select << connection.quote(Time.now.utc)
+          hash[column] = column
         end
+        hash
+      end
+      
+      # Magic column not in "from" table
+      if to[:columns].include?(magic) && !from[:columns].include?(magic)
+        insert[magic] = Time.now.utc
+      end
+      
+      # Quote everything
+      insert = insert.inject({}) do |hash, (column, value)|
+        if value.is_a?(Time)
+          hash[connection.quote_column_name(column)] = connection.quote(value)
+        else
+          hash[connection.quote_column_name(column)] = connection.quote_column_name(value)
+        end
+        hash
       end
       
       # Callbacks
@@ -89,44 +108,44 @@ module Mover
         
         if options[:quick]
           connection.execute(<<-SQL)
-            INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-            SELECT #{select.join(', ')}
-            FROM #{from_class.table_name}
+            INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
+            SELECT #{insert.values.join(', ')}
+            FROM #{from[:table]}
             #{where}
           SQL
         elsif !options[:generic] && connection.class.to_s.include?('Mysql')
-          update = insert.collect do |i|
-            if i.include?("'")
-              "#{to_class.table_name}.#{i} = #{i}"
+          update = insert.collect do |column, value|
+            if value.include?("'")
+              "#{to[:table]}.#{column} = #{value}"
             else
-              "#{to_class.table_name}.#{i} = #{from_class.table_name}.#{i}"
+              "#{to[:table]}.#{column} = #{from[:table]}.#{value}"
             end
           end
           
           connection.execute(<<-SQL)
-            INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
-            SELECT #{select.join(', ')}
-            FROM #{from_class.table_name}
+            INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
+            SELECT #{insert.values.join(', ')}
+            FROM #{from[:table]}
             #{where}
             ON DUPLICATE KEY
             UPDATE #{update.join(', ')};
           SQL
         else
-          conditions.gsub!(to_class.table_name, 't')
-          conditions.gsub!(from_class.table_name, 'f')
-          select.collect! { |s| s.include?('`') ? "f.#{s}" : s }
-          set = insert.collect do |i|
-            if i.include?("'")
-              "t.#{i} = #{i}"
+          conditions.gsub!(to[:table], 't')
+          conditions.gsub!(from[:table], 'f')
+          select = insert.values.collect { |i| i.include?("'") ? i : "f.#{i}" }
+          set = insert.collect do |column, value|
+            if value.include?("'")
+              "t.#{column} = #{value}"
             else
-              "t.#{i} = f.#{i}"
+              "t.#{column} = f.#{value}"
             end
           end
           
           connection.execute(<<-SQL)
-            UPDATE #{to_class.table_name}
+            UPDATE #{to[:table]}
               AS t
-            INNER JOIN #{from_class.table_name}
+            INNER JOIN #{from[:table]}
               AS f
             ON f.id = t.id
               AND #{conditions}
@@ -134,11 +153,11 @@ module Mover
           SQL
       
           connection.execute(<<-SQL)
-            INSERT INTO #{to_class.table_name} (#{insert.join(', ')})
+            INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
             SELECT #{select.join(', ')}
-            FROM #{from_class.table_name}
+            FROM #{from[:table]}
               AS f
-            LEFT OUTER JOIN #{to_class.table_name}
+            LEFT OUTER JOIN #{to[:table]}
               AS t
             ON f.id = t.id
             WHERE (
@@ -149,7 +168,7 @@ module Mover
         end
         
         unless options[:copy]
-          connection.execute("DELETE FROM #{from_class.table_name} #{where}")
+          connection.execute("DELETE FROM #{from[:table]} #{where}")
         end
         
         exec_callbacks.call after
