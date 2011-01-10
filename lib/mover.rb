@@ -1,10 +1,6 @@
 require File.dirname(__FILE__) + '/mover/gems'
 
-Mover::Gems.require(:lib)
-
 $:.unshift File.dirname(__FILE__)
-
-require 'mover/version'
 
 module Mover
   

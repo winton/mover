@@ -1,0 +1,13 @@
+name: mover
+version: 0.3.5
+authors:
+  - Winton Welsh
+email: mail@wintoni.us
+homepage: http://github.com/winton/mover
+summary: Move ActiveRecord records across tables like it ain't no thang
+description: Move ActiveRecord records across tables like it ain't no thang
+dependencies: null
+development_dependencies:
+  - active_wrapper
+  - rake
+  - rspec

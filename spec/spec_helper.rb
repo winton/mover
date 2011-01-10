@@ -1,13 +1,14 @@
+require 'pp'
+
 $root = File.expand_path('../../', __FILE__)
 require "#{$root}/lib/mover/gems"
 
-Mover::Gems.require(:spec)
+Mover::Gems.activate %w(active_wrapper rspec)
 
 require 'active_wrapper'
 require 'fileutils'
 
 require "#{$root}/lib/mover"
-require 'pp'
 
 require "#{$root}/spec/fixtures/article"
 require "#{$root}/spec/fixtures/article_archive"
@@ -54,11 +55,4 @@ def create_records(klass, values={})
     record.update_attributes(values)
     record
   end
-end
-
-# For use with rspec textmate bundle
-def debug(object)
-  puts "<pre>"
-  puts object.pretty_inspect.gsub('<', '&lt;').gsub('>', '&gt;')
-  puts "</pre>"
 end

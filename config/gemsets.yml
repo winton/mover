@@ -1,0 +1,5 @@
+mover:
+  rake: >=0.8.7
+  rspec: ~>1.0
+  default:
+    active_wrapper: =0.4.3
