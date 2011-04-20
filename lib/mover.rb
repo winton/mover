@@ -39,6 +39,7 @@ module Mover
         :table => from_class.table_name
       }
       to = {
+        :database => to_class.connection.current_database,
         :columns => to_class.column_names,
         :table => to_class.table_name
       }
@@ -104,7 +105,7 @@ module Mover
         
         if options[:quick]
           connection.execute(<<-SQL)
-            INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
+            INSERT INTO #{to[:database]}.#{to[:table]} (#{insert.keys.join(', ')})
             SELECT #{insert.values.join(', ')}
             FROM #{from[:table]}
             #{where}
@@ -117,9 +118,8 @@ module Mover
               "#{to[:table]}.#{column} = #{from[:table]}.#{value}"
             end
           end
-          
           connection.execute(<<-SQL)
-            INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
+            INSERT INTO #{ to[:database]}.#{to[:table]} (#{insert.keys.join(', ')})
             SELECT #{insert.values.join(', ')}
             FROM #{from[:table]}
             #{where}
