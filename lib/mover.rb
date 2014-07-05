@@ -129,24 +129,39 @@ module Mover
         else
           conditions.gsub!(to[:table], 't')
           conditions.gsub!(from[:table], 'f')
+          conditions.gsub!(/\"id\"/,'f.id') if connection.class.to_s.include?('PostgreSQL')
+          
           select = insert.values.collect { |i| i.include?("'") ? i : "f.#{i}" }
           set = insert.collect do |column, value|
+            prefix = 't.' unless connection.class.to_s.include?('PostgreSQL')
             if value.include?("'")
-              "t.#{column} = #{value}"
+              "#{prefix}#{column} = #{value}"
             else
-              "t.#{column} = f.#{value}"
+              "#{prefix}#{column} = f.#{value}"
             end
           end
           
-          connection.execute(<<-SQL)
-            UPDATE #{to[:table]}
-              AS t
-            INNER JOIN #{from[:table]}
-              AS f
-            ON f.id = t.id
-              AND #{conditions}
-            SET #{set.join(', ')}
-          SQL
+          if connection.class.to_s.include?('PostgreSQL')
+            connection.execute(<<-SQL)
+              UPDATE #{to[:table]}
+                AS t
+              SET #{set.join(', ')}
+              FROM #{from[:table]}
+                AS f
+              WHERE f.id = t.id
+                AND #{conditions}
+            SQL
+          else
+            connection.execute(<<-SQL)
+              UPDATE #{to[:table]}
+                AS t
+              INNER JOIN #{from[:table]}
+                AS f
+              ON f.id = t.id
+                AND #{conditions}
+              SET #{set.join(', ')}
+            SQL
+          end
       
           connection.execute(<<-SQL)
             INSERT INTO #{to[:table]} (#{insert.keys.join(', ')})
@@ -174,7 +189,11 @@ module Mover
     def reserve_id
       id = nil
       transaction do
-        id = connection.insert("INSERT INTO #{self.table_name} () VALUES ()")
+        if connection.class.to_s.include?('PostgreSQL')
+          id = connection.insert("INSERT INTO #{self.table_name} (id) VALUES (nextval('#{self.table_name}_id_seq'::regclass))").to_i
+        else
+          id = connection.insert("INSERT INTO #{self.table_name} () VALUES ()")
+        end
         connection.execute("DELETE FROM #{self.table_name} WHERE id = #{id}") if id
       end
       id

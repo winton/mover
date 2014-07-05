@@ -9,6 +9,9 @@ describe Mover do
       before(:all) do
         @options = {}
         @options[option] = true
+        $db.drop_db
+        $db.create_db
+        $db.establish_connection
       end
     
       before(:each) do
